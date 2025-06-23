@@ -39,7 +39,7 @@ into **wasm** (Web Assembly) using **Emscripten** and **autoconf automake libtoo
   ```
   sudo apt install build-essential cmake git autoconf automake libtool
   ```
-* Install **Emscripten** in the <user> directory of your linux virtual memory space, this can be done via:
+* Install **Emscripten** in the <user> directory of your linux <user> directory, this can be done via git clone:
 
   ```
   cd ~  (root <user> dir)
