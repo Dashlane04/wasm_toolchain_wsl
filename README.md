@@ -3,8 +3,7 @@
 
 ## Description
 
-A toolchain targeted for **Windows** users navigating through system using **WSL2** (Windows Subsystem for Linux). This toolchain helps convert native c++ code and libraries
-into **wasm** (Web Assembly) using **Emscripten** and **autoconf automake libtool**.
+A toolchain targeted for **Windows** users navigating through system using **WSL2** (Windows Subsystem for Linux). This toolchain helps convert native c++ code and libraries into **wasm** (Web Assembly) using **Emscripten** and **autoconf automake libtool**. Furthermore, it can be used with frameworks like SpringBoot for client-side javascript delivery. 
 
 ---
 
