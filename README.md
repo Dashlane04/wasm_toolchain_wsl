@@ -1,5 +1,5 @@
 # wasm_toolchain_wsl
-🧰 **A workaround toolchain for converting C/C++ code and libraries into wasm for web development with compiled js scripts.**
+🧰 **A workaround toolchain for converting native C++ code and libraries to wasm for web development with compiled js scripts.**
 
 ## Description
 
