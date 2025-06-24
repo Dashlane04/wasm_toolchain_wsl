@@ -129,7 +129,7 @@ You can access this file in VSCode by opening the **Command Palette** in **Setti
 emcc test.cpp \
   -I/home/<user>/libsodium-wasm/include \        
   -L/home/<user>/libsodium-wasm/lib -lsodium \
-  -s EXPORTED_FUNCTIONS='["func_name"]' \
+  -s EXPORTED_FUNCTIONS='["_func_name"]' \
   -s EXPORTED_RUNTIME_METHODS='["ccall"]' \
   -s NO_EXIT_RUNTIME=1 \
   -o test.js
@@ -141,36 +141,81 @@ emcc test.cpp \
   
 * ``-lsodium``: the ``-l<name>`` flag is part of the linking process. This option tells the linker to resolve references to functions declared in headers by associating them with precompiled implementations found in libraries like **lib<name>.a** or **lib<name>.so**. For example, when you use the ``sodium_init()`` function to initialize the **Libsodium** library from the ``<sodium.h>`` header, the linker will try to map the corresponding precompiled wasm-compatible code to the function. ⚠️ **This is a crucial step and must be done correctly!**
   
-* ``-s EXPORTED_FUNCTIONS='["func_name"]'`` tells Emscripten to explicitly export the C++ function named func_name (and any other functions listed) from the compiled WebAssembly module, making it callable directly from JavaScript.
+* ``-s EXPORTED_FUNCTIONS='["func_name"]'`` tells Emscripten to explicitly export the C++ function named func_name (and any other functions listed) from the compiled WebAssembly module, making it callable directly from JavaScript. ⚠️ **Follow the format _<func_name>, which consists of an underscore followed by the function name. You might get a warning or error while compiling with emcc without the underscore!**
   
 * ``-s EXPORTED_RUNTIME_METHODS='["ccall"]'`` instructs Emscripten to include specific methods from its JavaScript "glue code" runtime into the final output. ``ccall`` is a common **Emscripten** runtime method that provides a convenient way for JavaScript to call C/C++ functions, handling argument type conversions and return values. Check this url for more info: [emcripten-(connecting_cpp_and_js)](https://emscripten.org/docs/porting/connecting_cpp_and_javascript/Interacting-with-code.html)
 
-* ``-s NO_EXIT_RUNTIME=1``: This flag prevents the **Emscripten** runtime from automatically shutting down after the main function completes or ``exit()`` is called, ensuring that exported C/C++ functions remain callable from JavaScript for the entire duration of the web page's lifecycle.
+* ``-s NO_EXIT_RUNTIME=1``: This flag prevents the **Emscripten** runtime from automatically shutting down after the main function completes or ``exit()`` is called, ensuring that exported C++ functions remain callable from JavaScript for the entire duration of the web page's lifecycle.
 
 ---
-### C++ file
-* Your C++ file would look something like this:
+### ⚙️ C++ function exports
+* Example C++ program:
 
-  ```
-   #include <iostream>
-   #include <emscripten.h>
-   #include <sodium.h>
-   using namespace std;
+```
+#include <iostream>
+#include <emscripten.h>
+#include <sodium.h>
+using namespace std;
 
-   EMSCRIPTEN_KEEPALIVE
-   extern "C"{
-   int main() { 
+EMSCRIPTEN_KEEPALIVE
+int main() { 
     if (sodium_init() < 0) {
         cout << "Libsodium init failed!" << endl;
         return 1;
     }
     cout << "Libsodium is ready!" << endl;
     return 0;
-   }
-   }
-  ```
+}
 
+EMSCRIPTEN_KEEPALIVE
+extern "C"{
+int test(){
+    if (sodium_init() > 0){
+        cout << "Libsodium suceeded!";
+        return 1;
+    }
+    return 0;
+}
+}
+```
+* The `EMSCRIPTEN_KEEPALIVE` is a macro provided by **Emscripten** that serves a crucial purpose: it prevents functions from being removed by the compiler's or linker's "dead code elimination" process. This is quite similar to the `-s NO_EXIT_RUNTIME=1` flag, but it also ensures that even if `test()` isn't called directly by `main()` or other C++ code within your test.cpp, it will still be present in the compiled WebAssembly module for JavaScript to invoke.
 
+* Only use `extern "C"` for C++ functions besides `main()` to avoid conflict and warnings. This tells the C++ compiler to not perform name mangling (C doesn't have method overloading but C++ does), which allows you to use the original functions' names via Javascript.
+
+* In this case, the bash script for emcc compiling would look like this:
+  
+```
+emcc test.cpp \
+  -I/home/<user>/libsodium-wasm/include \        
+  -L/home/<user>/libsodium-wasm/lib -lsodium \
+  -s EXPORTED_FUNCTIONS='["_main","_test"]' \
+  -s EXPORTED_RUNTIME_METHODS='["ccall"]' \
+  -s NO_EXIT_RUNTIME=1 \
+  -o test.js
+```
+
+* To test the functionality of the exports: In a HTML file presumably with the `test.js` script loaded (containing all the wasm converted to js-compatible format), you can assert another script that executes when a buttton element is pressed:
+
+```
+<script>
+    function run_wasm(){
+        var result = Module.ccall(
+            "main",
+            "number",
+            null,
+            null
+        );
+        console.log(result);
+    }
+</script>
+```
+If the **Libsodium** library is successfully initialized, the console should output `Libsodium is ready!` when the button element is pressed. If not, please check the previous steps.
+
+---
+
+### 🔗 Follow-up
+
+* After successfully setting the toolchain, you can examine this helpful youtube series for interacting with Javascript, which is an essential part of WebAssembly usage: [interacting_with_js](https://youtu.be/RSLHrmDL4kU?si=XC8JcNY4ZwsQghhL)
 
 
 
