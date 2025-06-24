@@ -54,7 +54,7 @@ A toolchain targeted for **Windows** users navigating through system using **WSL
 ---
 ### 📚 Setting up necessary build components
 
-* This example walks through integrating **Libsodium** for AES-256-GCM encryption within a WebAssembly toolchain. It outlines the process of compiling a native C/C++ library into a wasm-compatible format and organizing the output for use in JavaScript applications or Spring Boot projects. This is good for secure message transmission between clients for a realtime chatapp because encryption/decryption is handled with near native C/C++ performance.
+* This example walks through integrating **Libsodium** for AES-256-GCM encryption within a WebAssembly toolchain. It outlines the process of compiling a native C++ library into a wasm-compatible format and organizing the output for use in JavaScript applications or Spring Boot projects. This is good for secure message transmission between clients for a realtime chatapp because encryption/decryption is handled with near native C/C++ performance.
 
 * After installing **Libsodium** in the `/home/<user>/...` directory, check if the directory already contains a `configure` file or not. This file is crucial for creating the `Makefile` as well as automatically configuring software source code packages to adapt to Unix-like systems. If not found, run the following bash code in the **Libsodium** package directory to generate:
 
@@ -81,7 +81,7 @@ A toolchain targeted for **Windows** users navigating through system using **WSL
   mkdir libsodium-wasm
   ```
 
-* To compile a C/C++ file containing ``#include <sodium.h>`` and ``#include <emscripten.h>`` into WebAssembly using **Emscripten**, the **emcc compiler** needs to be explicitly directed to the precompiled, WASM-compatible version of **Libsodium**. ##⚠️ This approach is necessary for any package used in conjunction with the emscripten header.
+* To compile a C++ file containing ``#include <sodium.h>`` and ``#include <emscripten.h>`` into WebAssembly using **Emscripten**, the **emcc compiler** needs to be explicitly directed to the precompiled, WASM-compatible version of **Libsodium**. ##⚠️ This approach is necessary for any package used in conjunction with the emscripten header.
 
 * Now run these to compile the package into wasm, which generates the **include** and **lib** directory:
 
@@ -122,7 +122,7 @@ A toolchain targeted for **Windows** users navigating through system using **WSL
 You can access this file in VSCode by opening the **Command Palette** in **Settings**, then searching for and selecting `Preferences: Open User Settings (JSON)`. This configuration file defines the appropriate include paths for the C++ toolchain, aligned with the WSL2 virtual Linux file system, ensuring IntelliSense and build tools resolve headers correctly.
 
 ---
-### 🛠 Compiling the C/C++ file in VSCode
+### 🛠 Compiling the C++ file in VSCode
 
 * Navigate to the VSCode project directory and execute the following, which outputs a corresponding .wasm and .js file from the selected .cpp file. **You can also save this script in a bash file to avoid manually repeating the same process**:
 ```
@@ -141,11 +141,34 @@ emcc test.cpp \
   
 * ``-lsodium``: the ``-l<name>`` flag is part of the linking process. This option tells the linker to resolve references to functions declared in headers by associating them with precompiled implementations found in libraries like **lib<name>.a** or **lib<name>.so**. For example, when you use the ``sodium_init()`` function to initialize the **Libsodium** library from the ``<sodium.h>`` header, the linker will try to map the corresponding precompiled wasm-compatible code to the function. ⚠️ **This is a crucial step and must be done correctly!**
   
-* ``-s EXPORTED_FUNCTIONS='["func_name"]'`` tells Emscripten to explicitly export the C/C++ function named func_name (and any other functions listed) from the compiled WebAssembly module, making it callable directly from JavaScript.
+* ``-s EXPORTED_FUNCTIONS='["func_name"]'`` tells Emscripten to explicitly export the C++ function named func_name (and any other functions listed) from the compiled WebAssembly module, making it callable directly from JavaScript.
   
 * ``-s EXPORTED_RUNTIME_METHODS='["ccall"]'`` instructs Emscripten to include specific methods from its JavaScript "glue code" runtime into the final output. ``ccall`` is a common **Emscripten** runtime method that provides a convenient way for JavaScript to call C/C++ functions, handling argument type conversions and return values. Check this url for more info: [emcripten-(connecting_cpp_and_js)](https://emscripten.org/docs/porting/connecting_cpp_and_javascript/Interacting-with-code.html)
 
 * ``-s NO_EXIT_RUNTIME=1``: This flag prevents the **Emscripten** runtime from automatically shutting down after the main function completes or ``exit()`` is called, ensuring that exported C/C++ functions remain callable from JavaScript for the entire duration of the web page's lifecycle.
+
+---
+### C++ file
+* Your C++ file would look something like this:
+
+  ```
+   #include <iostream>
+   #include <emscripten.h>
+   #include <sodium.h>
+   using namespace std;
+
+   EMSCRIPTEN_KEEPALIVE
+   extern "C"{
+   int main() { 
+    if (sodium_init() < 0) {
+        cout << "Libsodium init failed!" << endl;
+        return 1;
+    }
+    cout << "Libsodium is ready!" << endl;
+    return 0;
+   }
+   }
+  ```
 
 
 
